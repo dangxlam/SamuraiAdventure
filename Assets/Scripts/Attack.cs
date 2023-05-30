@@ -21,8 +21,9 @@ public class Attack : MonoBehaviour
 
         if (health != null)
         {
+            Vector2 directionKnockback = transform.parent.localScale.x > 0 ? knockBack : new Vector2(-knockBack.x, knockBack.y);
             //Hit target
-            bool gotHit = health.Hit(attackDamage, knockBack);
+            bool gotHit = health.Hit(attackDamage, directionKnockback);
             if(gotHit)
                 Debug.Log(collision.name + " be hit by "  + attackDamage);
         }

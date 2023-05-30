@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections))]
+[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections), typeof(Health))]
 
 public class PlayerController : MonoBehaviour
 {
@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     public float jumpImpulse = 10f;
     Vector2 moveInput;
     TouchingDirections touchingDirections;
+    Health health;
 
     public float currentMoveSpeed
     {
@@ -118,6 +119,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         touchingDirections = GetComponent<TouchingDirections>();
+        health  = GetComponent<Health>();
     }
 
     // Start is called before the first frame update
@@ -129,8 +131,13 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        rb.velocity = new Vector2(moveInput.x * currentMoveSpeed, rb.velocity.y);
+        if(!health.IsHit) 
+        {
+            rb.velocity = new Vector2(moveInput.x * currentMoveSpeed, rb.velocity.y);
+        }
         animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
+
+
     }
 
     private void FixedUpdate()
@@ -203,8 +210,18 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    public void OnRangedAttack(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            animator.SetTrigger(AnimationStrings.rangedAttackTrigger);
+        }
+
+    }
+
     public void OnHit(int damage, Vector2 knockBack)
     {
-        rb.velocity = new Vector2(knockBack.x, rb.velocity.y + knockBack.y);
+        //health.IsHit = true;
+        rb.velocity = new Vector2(knockBack.x , rb.velocity.y + knockBack.y);
     }
 }

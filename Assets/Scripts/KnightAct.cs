@@ -3,12 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections))]
+[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections), typeof(Health))]
 public class KnightAct : MonoBehaviour
 {
     public float walkSpeed = 3f;
+    public float maxSpeed = 3f;
     public float walkStopRate = 0.05f;
     public DetectionZone attackZone;
+    public DetectionZone groundDetectionZone;
+    Health health;
 
     Rigidbody2D rb;
 
@@ -58,23 +61,38 @@ public class KnightAct : MonoBehaviour
         }
     }
 
+    public float AttackCooldown { get
+        {
+            return animator.GetFloat(AnimationStrings.attackCooldown);
+        } private set
+        {
+            animator.SetFloat(AnimationStrings.attackCooldown, Mathf.Max(value, 0));
+        } }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         touchingDirections = GetComponent<TouchingDirections>();
         animator = GetComponent<Animator>();
+        health = GetComponent<Health>();
     }
 
     private void FixedUpdate()
     {
-        if(touchingDirections.IsOnWall && touchingDirections.IsGrounded)
+        if (touchingDirections.IsOnWall && touchingDirections.IsGrounded)
         {
             FlipDirection();
         }
-        if(CanMove)
-            rb.velocity = new Vector2(walkSpeed * walkDirectionVector.x, rb.velocity.y);
-        else
-            rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, 0, walkStopRate), rb.velocity.y);
+
+        if(!health.IsHit)
+        {
+            if (CanMove)
+                //float xVelocity = Mathf.Clamp(rb.velocity.x + (walkSpeed * walkDirectionVector.x * Time.fixedDeltaTime), -maxSpeed, maxSpeed);
+                rb.velocity = new Vector2(Mathf.Clamp(rb.velocity.x + (walkSpeed * walkDirectionVector.x * Time.fixedDeltaTime), -maxSpeed, maxSpeed), rb.velocity.y);
+            else
+                rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, 0, walkStopRate), rb.velocity.y);
+        }
+       
     }
 
     private void FlipDirection()
@@ -102,5 +120,24 @@ public class KnightAct : MonoBehaviour
     void Update()
     {
         HasTarget = attackZone.detectedColliders.Count > 0;
+        if(AttackCooldown > 0)
+        {
+            AttackCooldown -= Time.deltaTime;
+
+        }
+    }
+
+    public void OnHit(int damage, Vector2 knockBack)
+    {
+        //health.IsHit = true;
+        rb.velocity = new Vector2(knockBack.x, rb.velocity.y + knockBack.y);
+    }
+
+    public void OnNoGroundDetected()
+    {
+        if(touchingDirections.IsGrounded)
+        {
+            FlipDirection();
+        }
     }
 }

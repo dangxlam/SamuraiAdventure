@@ -6,3 +6,4 @@ Assembly-CSharp.csproj
 /Logs
 /Library
 /obj
+/BuildVers

@@ -7,6 +7,7 @@ using UnityEngine.Events;
 public class Health : MonoBehaviour
 {
     public UnityEvent<int, Vector2> damageHit;
+    public UnityEvent<int, int> healthChange;
     
     [SerializeField]
     private int _maxHealth = 100;
@@ -36,6 +37,7 @@ public class Health : MonoBehaviour
         set
         {
             _health = value;
+            healthChange?.Invoke(_health, MaxHealth);
 
             //If health below 0, character dead
             if(_health <= 0)
@@ -51,7 +53,15 @@ public class Health : MonoBehaviour
     [SerializeField]
     private bool isInvincible = false;
 
-    public bool IsHit { get; private set; }
+    public bool IsHit { get
+        {
+            return animator.GetBool(AnimationStrings.isHit);
+        }
+        private set 
+        { 
+            animator.SetBool(AnimationStrings.isHit, value);
+        } 
+    }
 
     private float timeSinceHit = 0;
     public float invincibleTime = 0.25f;
@@ -98,10 +108,27 @@ public class Health : MonoBehaviour
             //Notify other components
             IsHit = true;
             damageHit?.Invoke(damage, knockBack);
+            CharacterEvents.characterDamaged.Invoke(gameObject, damage);
             return true;
         }
 
         //Can not hit
+        return false;
+    }
+
+    public bool Heal(int healAmount)
+    {
+        if(IsAlive && HealthLogic < MaxHealth)
+        {
+            int maxHeal = Mathf.Max(MaxHealth - HealthLogic, 0);
+            int actualHeal = Mathf.Min(maxHeal, healAmount);
+
+            HealthLogic += actualHeal;
+
+            CharacterEvents.characterHealed(gameObject, actualHeal);
+            return true;
+        }
+
         return false;
     }
 
